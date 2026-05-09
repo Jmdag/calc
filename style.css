@@ -1,49 +1,18 @@
-body{
-    background:#222;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-    min-height:100vh;
-    padding:20px
-    margin:0;
-    font-family:monospace;
-    
-  }
-  .calculator{
-    background:#333;
-    padding:15px;
-    border-radius:12px;
-    width:340px;
-    box-shadow:0 8px 24px rgba(0,0,0,.35);
-  }
-  .display{
-    background:#cfe3c3;
-    color:#000;
-    padding:10px;
-    height:64px;
-    font-size:20px;
-    margin-bottom:10px;
-    overflow-x:auto;
-    border-radius:8px;
-    display:flex;
-    align-items:center;
-  }
-  .buttons{
-    display:grid;
-    grid-template-columns:repeat(5, 1fr);
-    gap:6px;
-  }
-  button{
-    padding:10px 8px;
-    font-size:14px;
-    border-radius:8px;
-    border:none;
-    cursor:pointer;
-    user-select:none;
-  }
-  button:active{ transform:translateY(1px); }
-  .num{ background:#ddd; }
-  .op{ background:#888; }
-  .func{ background:#555; color:#fff; }
-  .mode{ background:#4caf50; color:#fff; }
-  .eq{ background:orange; }
+body { background: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; }
+
+.calculator { background: #3d4043; border-radius: 20px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 340px; }
+
+.screen { background: #9bb19b; border: 5px solid #222; border-radius: 5px; height: 80px; margin-bottom: 20px; padding: 10px; text-align: right; overflow: hidden; }
+
+#history { font-size: 0.9rem; color: #444; height: 20px; }
+#display { font-size: 1.8rem; font-family: 'Courier New', monospace; font-weight: bold; }
+
+.keypad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+.btn { background: #ebebeb; border: none; padding: 12px 5px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.1s; }
+.btn:active { transform: translateY(2px); background: #ccc; }
+
+.func { background: #555; color: white; font-size: 0.8rem; }
+.delete, .clear { background: #a52a2a; color: white; }
+.equal { background: #2a52a5; color: white; grid-column: span 1; }
+.shift { background: #d4af37; color: black; }
