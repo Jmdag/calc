@@ -1,120 +1,97 @@
-let display = document.getElementById("display");
-let angleMode = "DEG";
+let currentInput = "";
 let lastAnswer = 0;
 
-function insert(value) {
-  if (display.innerText === "0") display.innerText = "";
-  display.innerText += value;
+const display = document.getElementById('display');
+const history = document.getElementById('history');
+
+function input(value) {
+    // If display is 0, replace it, otherwise append
+    if (currentInput === "0") currentInput = value;
+    else currentInput += value;
+    updateDisplay();
 }
 
-function clearAll() {
-  display.innerText = "0";
+function clearScreen() {
+    currentInput = "";
+    updateDisplay("0");
 }
 
-function del() {
-  display.innerText = display.innerText.slice(0, -1) || "0";
+function backspace() {
+    currentInput = currentInput.slice(0, -1);
+    updateDisplay();
 }
 
-function toggleAngle() {
-  angleMode = angleMode === "DEG" ? "RAD" : "DEG";
-  document.querySelector(".mode").innerText = angleMode;
+function updateDisplay(val) {
+    display.innerText = val || currentInput || "0";
 }
 
-function toRadians(x) {
-  return angleMode === "DEG" ? x * Math.PI / 180 : x;
-}
+let currentBase = "DEC"; // Can be 'DEC' or 'BIN'
 
-// Continued-fraction decimal → fraction
-function toFraction(x, tolerance = 1e-10, maxDen = 1000000) {
-  if (!isFinite(x)) return "Math ERROR";
-
-  const sign = x < 0 ? "-" : "";
-  x = Math.abs(x);
-
-  if (Number.isInteger(x)) return sign + x;
-
-  let h1 = 1, h2 = 0;
-  let k1 = 0, k2 = 1;
-  let b = x;
-
-  while (true) {
-    let a = Math.floor(b);
-    let h = a * h1 + h2;
-    let k = a * k1 + k2;
-
-    if (k > maxDen) {
-      // fallback: clamp denominator growth
-      return sign + h1 + "/" + k1;
-    }
-
-    if (Math.abs(x - h / k) < tolerance) {
-      return sign + h + "/" + k;
-    }
-
-    h2 = h1; h1 = h;
-    k2 = k1; k1 = k;
-
-    const frac = (b - a);
-    if (frac === 0) return sign + h + "/" + k;
-    b = 1 / frac;
-  }
-}
-
-// Convert display expression → valid JS
-function toJS(expr) {
-  return expr
-    // UI operators
-    .replace(/×/g, "*")
-    .replace(/÷/g, "/")
-    .replace(/\^/g, "**")
-    // ANS constant
-    .replace(/ANS/g, "(ANS)")
-    // logs
-    .replace(/log\(/g, "LOG(")
-    .replace(/ln\(/g, "LN(")
-    // trig
-    .replace(/sin\(/g, "SIN(")
-    .replace(/cos\(/g, "COS(")
-    .replace(/tan\(/g, "TAN(")
-    // roots:
-    // √(x)  -> sqrt(x)
-    .replace(/√\(/g, "SQRT(")
-    // ∛(x) -> cbrt(x)
-    .replace(/∛\(/g, "CBRT(")
-    // n√(x) -> root(n,x)
-    // Matches: number immediately before √(
-    // Example: 4√(81) -> root(4,81)
-    .replace(/(\d+(?:\.\d+)?)√\(/g, "ROOT($1,");
+function switchBase(base) {
+    currentBase = base;
+    
+    // Update UI highlights
+    document.getElementById('decMode').classList.toggle('active', base === 'DEC');
+    document.getElementById('binMode').classList.toggle('active', base === 'BIN');
+    
+    // Disable/Enable non-binary buttons
+    const nonBinButtons = document.querySelectorAll('.btn-num-extra'); // Add this class to buttons 2-9
+    nonBinButtons.forEach(btn => btn.disabled = (base === 'BIN'));
+    
+    clearScreen();
 }
 
 function calculate() {
-  try {
-    const jsExpr = toJS(display.innerText);
+    try {
+        let expression = currentInput
+            .replace(/×/g, '*')
+            .replace(/÷/g, '/')
+            .replace(/ans/gi, lastAnswer);
 
-    const result = Function(
-      "SIN", "COS", "TAN", "SQRT", "CBRT", "ROOT", "LOG", "LN", "ANS",
-      "return " + jsExpr
-    )(
-      x => Math.sin(toRadians(x)),
-      x => Math.cos(toRadians(x)),
-      x => Math.tan(toRadians(x)),
-      x => Math.sqrt(x),
-      x => Math.cbrt(x),
-      (n, x) => Math.pow(x, 1 / n),
-      x => Math.log10(x),
-      x => Math.log(x),
-      lastAnswer
-    );
+        let result;
 
-    if (!Number.isFinite(result)) {
-      display.innerText = "Math ERROR";
-      return;
+        if (currentBase === "BIN") {
+            // 1. Convert binary operands to decimal for calculation
+            // This regex finds binary numbers and wraps them in a decimal converter
+            let decimalExpression = expression.replace(/[01]+/g, (match) => {
+                return parseInt(match, 2);
+            });
+            
+            result = math.evaluate(decimalExpression);
+            
+            // 2. Convert result back to Binary string
+            lastAnswer = result;
+            currentInput = (result >>> 0).toString(2); // >>> 0 handles unsigned 32-bit conversion
+        } else {
+            // Standard Decimal Mode
+            expression = expression
+                .replace(/π/g, 'pi')
+                .replace(/ln\(/g, 'log(')
+                .replace(/sin\(/g, 'sin(deg ')
+                .replace(/cos\(/g, 'cos(deg ')
+                .replace(/tan\(/g, 'tan(deg ');
+
+            result = math.evaluate(expression);
+            currentInput = math.format(result, { precision: 10 }).toString();
+            lastAnswer = currentInput;
+        }
+
+        history.innerText = (currentBase === "BIN" ? "BIN: " : "") + expression + " =";
+        updateDisplay();
+    } catch (error) {
+        display.innerText = "Base ERROR";
+        currentInput = "";
     }
-
-    lastAnswer = result;
-    display.innerText = toFraction(result);
-
-  } catch (e) {
-    display.innerText = "Syntax ERROR";
-  }
 }
+
+// Support for keyboard input
+window.addEventListener('keydown', (e) => {
+    if (e.key >= 0 && e.key <= 9) input(e.key);
+    if (e.key === '+') input('+');
+    if (e.key === '-') input('-');
+    if (e.key === '*') input('*');
+    if (e.key === '/') input('/');
+    if (e.key === 'Enter') calculate();
+    if (e.key === 'Backspace') backspace();
+    if (e.key === 'Escape') clearScreen();
+});
