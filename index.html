@@ -1,74 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<link rel="stylesheet" href="style.css">
+    <!-- Math.js for high-precision and symbolic math -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+
+
     <div class="calculator">
-  <div id="display" class="display">0</div>
+        <div class="screen">
+            <div id="history"></div>
+            <div id="display">0</div>
+        </div>
+        <div class="keypad">
+            <!-- Row 1: Scientific Functions -->
+            <button class="btn shift" onclick="toggleShift()">SHIFT</button>
+            <button class="btn mode" onclick="setMode()">MODE</button>
+            <button class="btn func" onclick="input('sin(')">sin</button>
+            <button class="btn func" onclick="input('cos(')">cos</button>
+            <button class="btn func" onclick="input('tan(')">tan</button>
+            <button class="btn func" onclick="input('(')">(</button>
+            <button class="btn func" onclick="input(')')">)</button>
+            
+            <!-- Row 2: Powers & Roots -->
+            <button class="btn func" onclick="input('^2')">x²</button>
+            <button class="btn func" onclick="input('^')">xʸ</button>
+            <button class="btn func" onclick="input('log10(')">log</button>
+            <button class="btn func" onclick="input('ln(')">ln</button>
+            <button class="btn func" onclick="input('sqrt(')">√</button>
 
-  <div class="buttons">
-    <!-- Row 1 -->
-    <button class="mode" onclick="toggleAngle()">DEG</button>
-    <button class="func" onclick="insert('sin(')">sin</button>
-    <button class="func" onclick="insert('cos(')">cos</button>
-    <button class="func" onclick="insert('tan(')">tan</button>
-    <button class="func" onclick="clearAll()">AC</button>
+            <!-- Row 3: Standard Pad -->
+            <button class="btn" onclick="input('7')">7</button>
+            <button class="btn" onclick="input('8')">8</button>
+            <button class="btn" onclick="input('9')">9</button>
+            <button class="btn delete" onclick="backspace()">DEL</button>
+            <button class="btn clear" onclick="clearScreen()">AC</button>
 
-    <!-- Row 2 -->
-    <button class="func" onclick="insert('log(')">log</button>
-    <button class="func" onclick="insert('ln(')">ln</button>
-    <button class="func" onclick="insert('√(')">√</button>
-    <button class="func" onclick="insert('∛(')">∛</button>
-    <button class="func" onclick="del()">DEL</button>
+            <button class="btn" onclick="input('4')">4</button>
+            <button class="btn" onclick="input('5')">5</button>
+            <button class="btn" onclick="input('6')">6</button>
+            <button class="btn" onclick="input('*')">×</button>
+            <button class="btn" onclick="input('/')">÷</button>
 
-    <!-- Row 3 -->
-    <button class="func" onclick="insert('√(')">2√ (sq root)</button>
-    <button class="func" onclick="insert('∛(')">3√ (cube root)</button>
-    <button class="func" onclick="insert('√(')">n√</button>
-    <button class="func" onclick="insert('^')">^</button>
-    <button class="func" onclick="insert('Math.PI')">π</button>
+            <button class="btn" onclick="input('1')">1</button>
+            <button class="btn" onclick="input('2')">2</button>
+            <button class="btn" onclick="input('3')">3</button>
+            <button class="btn" onclick="input('+')">+</button>
+            <button class="btn" onclick="input('-')">-</button>
 
-    <!-- Row 4 -->
-    <button class="num" onclick="insert('7')">7</button>
-    <button class="num" onclick="insert('8')">8</button>
-    <button class="num" onclick="insert('9')">9</button>
-    <button class="op"  onclick="insert('÷')">÷</button>
-    <button class="func" onclick="insert('(')">(</button>
-
-    <!-- Row 5 -->
-    <button class="num" onclick="insert('4')">4</button>
-    <button class="num" onclick="insert('5')">5</button>
-    <button class="num" onclick="insert('6')">6</button>
-    <button class="op"  onclick="insert('×')">×</button>
-    <button class="func" onclick="insert(')')">)</button>
-
-    <!-- Row 6 -->
-    <button class="num" onclick="insert('1')">1</button>
-    <button class="num" onclick="insert('2')">2</button>
-    <button class="num" onclick="insert('3')">3</button>
-    <button class="op"  onclick="insert('-')">−</button>
-    <button class="func" onclick="insert('.')">.</button>
-
-    <!-- Row 7 -->
-    <button class="num" onclick="insert('0')">0</button>
-    <button class="op"  onclick="insert('+')">+</button>
-    <button class="func" onclick="insert('ANS')">ANS</button>
-    <button class="eq"  onclick="calculate()">=</button>
-    <button class="func" onclick="insert('÷')">/</button>
-  </div>
-
-  <div style="color:#bbb; font-size:12px; margin-top:10px; line-height:1.35;">
-    Roots usage:
-    <br>• Square root: <b>√(x)</b>
-    <br>• Cube root: <b>∛(x)</b>
-    <br>• Nth root: type <b>n</b> then press <b>n√</b> and enter <b>(x)</b> → <b>n√(x)</b>
-    <br>Example: <b>4√(81)</b> = 3
-  </div>
-</div>
-    <script src="site.js"></script>
+            <button class="btn" onclick="input('0')">0</button>
+            <button class="btn" onclick="input('.')">.</button>
+            <button class="btn" onclick="input('pi')">π</button>
+            <button class="btn" onclick="input('ans')">Ans</button>
+            <button class="btn equal" onclick="calculate()">=</button>
+        </div>
+        <div class="modes">
+           <button class="btn mode-btn active" id="decMode" onclick="switchBase('DEC')">DEC</button>
+           <button class="btn mode-btn" id="binMode" onclick="switchBase('BIN')">BIN</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
