@@ -1,59 +1,77 @@
 <!DOCTYPE html>
-<link rel="stylesheet" href="style.css">
-    <!-- Math.js for high-precision and symbolic math -->
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחשבון מדעי מתקדם</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
-
-
-    <div class="calculator">
-        <div class="screen">
-            <div id="history"></div>
-            <div id="display">0</div>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="display-container">
+            <input type="text" id="main-display" disabled placeholder="0">
+            <div id="sub-display"></div>
         </div>
+
+        <div class="controls">
+            <label>מצב תצוגה:</label>
+            <select id="display-mode" onchange="updateDisplay()">
+                <option value="decimal">עשרוני</option>
+                <option value="fraction">שבר</option>
+                <option value="mixed">שבר מעורב</option>
+            </select>
+        </div>
+
         <div class="keypad">
-            <!-- Row 1: Scientific Functions -->
-            <button class="btn shift" onclick="toggleShift()">SHIFT</button>
-            <button class="btn mode" onclick="setMode()">MODE</button>
-            <button class="btn func" onclick="input('sin(')">sin</button>
-            <button class="btn func" onclick="input('cos(')">cos</button>
-            <button class="btn func" onclick="input('tan(')">tan</button>
-            <button class="btn func" onclick="input('(')">(</button>
-            <button class="btn func" onclick="input(')')">)</button>
+            <button onclick="insertText('sin(')">sin</button>
+            <button onclick="insertText('cos(')">cos</button>
+            <button onclick="insertText('tan(')">tan</button>
+            <button onclick="insertText('!')">n!</button>
+            <button onclick="insertText('nthRoot(')" title="שורש n (פסיק בין n ל-x)">ⁿ√x</button>
             
-            <!-- Row 2: Powers & Roots -->
-            <button class="btn func" onclick="input('^2')">x²</button>
-            <button class="btn func" onclick="input('^')">xʸ</button>
-            <button class="btn func" onclick="input('log10(')">log</button>
-            <button class="btn func" onclick="input('ln(')">ln</button>
-            <button class="btn func" onclick="input('sqrt(')">√</button>
-
-            <!-- Row 3: Standard Pad -->
-            <button class="btn" onclick="input('7')">7</button>
-            <button class="btn" onclick="input('8')">8</button>
-            <button class="btn" onclick="input('9')">9</button>
-            <button class="btn delete" onclick="backspace()">DEL</button>
-            <button class="btn clear" onclick="clearScreen()">AC</button>
-
-            <button class="btn" onclick="input('4')">4</button>
-            <button class="btn" onclick="input('5')">5</button>
-            <button class="btn" onclick="input('6')">6</button>
-            <button class="btn" onclick="input('*')">×</button>
-            <button class="btn" onclick="input('/')">÷</button>
-
-            <button class="btn" onclick="input('1')">1</button>
-            <button class="btn" onclick="input('2')">2</button>
-            <button class="btn" onclick="input('3')">3</button>
-            <button class="btn" onclick="input('+')">+</button>
-            <button class="btn" onclick="input('-')">-</button>
-
-            <button class="btn" onclick="input('0')">0</button>
-            <button class="btn" onclick="input('.')">.</button>
-            <button class="btn" onclick="input('pi')">π</button>
-            <button class="btn" onclick="input('ans')">Ans</button>
-            <button class="btn equal" onclick="calculate()">=</button>
+            <button onclick="insertText('log10(')">log₁₀</button>
+            <button onclick="insertText('log(')" title="לוג בסיס n: log(x, base)">logₙ</button>
+            <button onclick="insertText('sqrt(')">√</button>
+            <button onclick="insertText('^2')">x²</button>
+            <button onclick="insertText('^')">xⁿ</button>
+            
+            <button class="num" onclick="insertText('7')">7</button>
+            <button class="num" onclick="insertText('8')">8</button>
+            <button class="num" onclick="insertText('9')">9</button>
+            <button class="action" onclick="deleteLast()">DEL</button>
+            <button class="action" onclick="clearAll()">AC</button>
+            
+            <button class="num" onclick="insertText('4')">4</button>
+            <button class="num" onclick="insertText('5')">5</button>
+            <button class="num" onclick="insertText('6')">6</button>
+            <button class="op" onclick="insertText('*')">×</button>
+            <button class="op" onclick="insertText('/')">÷</button>
+            
+            <button class="num" onclick="insertText('1')">1</button>
+            <button class="num" onclick="insertText('2')">2</button>
+            <button class="num" onclick="insertText('3')">3</button>
+            <button class="op" onclick="insertText('+')">+</button>
+            <button class="op" onclick="insertText('-')">-</button>
+            
+            <button class="num" onclick="insertText('0')">0</button>
+            <button class="num" onclick="insertText('.')">.</button>
+            <button onclick="insertText(',')">,</button>
+            <button onclick="insertText('(')">(</button>
+            <button onclick="insertText(')')">)</button>
+            
+            <button class="solve-btn" onclick="calculateResult()" style="grid-column: span 5;">=</button>
         </div>
-        <div class="modes">
-           <button class="btn mode-btn active" id="decMode" onclick="switchBase('DEC')">DEC</button>
-           <button class="btn mode-btn" id="binMode" onclick="switchBase('BIN')">BIN</button>
+
+        <div class="quadratic-solver">
+            <h3>פתרון משוואה ריבועית (ax² + bx + c = 0)</h3>
+            <div class="quad-inputs">
+                <input type="number" id="quad-a" placeholder="a">
+                <input type="number" id="quad-b" placeholder="b">
+                <input type="number" id="quad-c" placeholder="c">
+                <button onclick="solveQuadratic()">פתור</button>
+            </div>
+            <div id="quad-result"></div>
         </div>
     </div>
     <script src="script.js"></script>
