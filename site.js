@@ -1,97 +1,185 @@
-let currentInput = "";
-let lastAnswer = 0;
+let currentExpression = "";
+let lastValidResult = null;
 
-const display = document.getElementById('display');
-const history = document.getElementById('history');
+const display = document.getElementById('main-display');
+const subDisplay = document.getElementById('sub-display');
+const displayMode = document.getElementById('display-mode');
 
-function input(value) {
-    // If display is 0, replace it, otherwise append
-    if (currentInput === "0") currentInput = value;
-    else currentInput += value;
-    updateDisplay();
+function insertText(text) {
+    if (display.value === "Math Error" || display.value === "Syntax Error") {
+        clearAll();
+    }
+    currentExpression += text;
+    display.value = currentExpression;
 }
 
-function clearScreen() {
-    currentInput = "";
-    updateDisplay("0");
+function clearAll() {
+    currentExpression = "";
+    display.value = "";
+    subDisplay.innerText = "";
+    lastValidResult = null;
 }
 
-function backspace() {
-    currentInput = currentInput.slice(0, -1);
-    updateDisplay();
+function deleteLast() {
+    if (display.value === "Math Error" || display.value === "Syntax Error") {
+        clearAll();
+        return;
+    }
+    currentExpression = currentExpression.toString().slice(0, -1);
+    display.value = currentExpression;
 }
 
-function updateDisplay(val) {
-    display.innerText = val || currentInput || "0";
-}
-
-let currentBase = "DEC"; // Can be 'DEC' or 'BIN'
-
-function switchBase(base) {
-    currentBase = base;
+function formatResult(value, mode) {
+    if (value === undefined || value === null) return "";
     
-    // Update UI highlights
-    document.getElementById('decMode').classList.toggle('active', base === 'DEC');
-    document.getElementById('binMode').classList.toggle('active', base === 'BIN');
+    // טיפול בתוצאות מרוכבות
+    if (math.typeOf(value) === 'Complex') {
+        return value.toString();
+    }
+
+    let decimalValue = math.number(value);
     
-    // Disable/Enable non-binary buttons
-    const nonBinButtons = document.querySelectorAll('.btn-num-extra'); // Add this class to buttons 2-9
-    nonBinButtons.forEach(btn => btn.disabled = (base === 'BIN'));
+    // מצב עשרוני
+    if (mode === 'decimal') {
+        return math.round(decimalValue, 10).toString();
+    } 
     
-    clearScreen();
-}
-
-function calculate() {
-    try {
-        let expression = currentInput
-            .replace(/×/g, '*')
-            .replace(/÷/g, '/')
-            .replace(/ans/gi, lastAnswer);
-
-        let result;
-
-        if (currentBase === "BIN") {
-            // 1. Convert binary operands to decimal for calculation
-            // This regex finds binary numbers and wraps them in a decimal converter
-            let decimalExpression = expression.replace(/[01]+/g, (match) => {
-                return parseInt(match, 2);
-            });
-            
-            result = math.evaluate(decimalExpression);
-            
-            // 2. Convert result back to Binary string
-            lastAnswer = result;
-            currentInput = (result >>> 0).toString(2); // >>> 0 handles unsigned 32-bit conversion
-        } else {
-            // Standard Decimal Mode
-            expression = expression
-                .replace(/π/g, 'pi')
-                .replace(/ln\(/g, 'log(')
-                .replace(/sin\(/g, 'sin(deg ')
-                .replace(/cos\(/g, 'cos(deg ')
-                .replace(/tan\(/g, 'tan(deg ');
-
-            result = math.evaluate(expression);
-            currentInput = math.format(result, { precision: 10 }).toString();
-            lastAnswer = currentInput;
+    // מצב שבר רגיל
+    if (mode === 'fraction') {
+        try {
+            return math.format(math.fraction(decimalValue), { fraction: 'ratio' });
+        } catch (e) {
+            return math.round(decimalValue, 10).toString();
         }
+    } 
+    
+    // מצב שבר מעורב
+    if (mode === 'mixed') {
+        try {
+            let frac = math.fraction(decimalValue);
+            let sign = frac.s < 0 ? "-" : "";
+            let n = math.abs(frac.n);
+            let d = frac.d;
+            
+            if (d === 1) return (sign + n).toString();
+            if (n < d) return sign + n + "/" + d;
+            
+            let whole = math.floor(n / d);
+            let remainder = n % d;
+            return `${sign}${whole} ${remainder}/${d}`;
+        } catch (e) {
+            return math.round(decimalValue, 10).toString();
+        }
+    }
+    
+    return math.round(decimalValue, 10).toString();
+}
 
-        history.innerText = (currentBase === "BIN" ? "BIN: " : "") + expression + " =";
-        updateDisplay();
-    } catch (error) {
-        display.innerText = "Base ERROR";
-        currentInput = "";
+function updateDisplay() {
+    if (lastValidResult !== null) {
+        display.value = formatResult(lastValidResult, displayMode.value);
     }
 }
 
-// Support for keyboard input
-window.addEventListener('keydown', (e) => {
-    if (e.key >= 0 && e.key <= 9) input(e.key);
-    if (e.key === '+') input('+');
-    if (e.key === '-') input('-');
-    if (e.key === '*') input('*');
-    if (e.key === '/') input('/');
-    if (e.key === 'Enter') calculate();
-    if (e.key === 'Backspace') backspace();
-    if (e.key === 'Escape') clearScreen();
-});
+function calculateResult() {
+    if (!currentExpression) return;
+    
+    try {
+        let evalExpression = currentExpression;
+        
+        // סגירה אוטומטית של סוגריים למניעת Syntax Error
+        let openP = (evalExpression.match(/\(/g) || []).length;
+        let closeP = (evalExpression.match(/\)/g) || []).length;
+        while (openP > closeP) {
+            evalExpression += ')';
+            closeP++;
+        }
+
+        // בדיקת חלוקה באפס 
+        if (evalExpression.includes('/0') || evalExpression.includes('/ 0')) {
+            throw new Error("Division by zero");
+        }
+
+        // התיקון: חזרנו לאובייקט ה-scope היציב.
+        // הלוגיקה של השורש נכתבה מחדש ב-JS טהור כדי למנוע התנגשויות מול math.js
+        const scope = {
+            sin: function(x) { return math.sin(math.unit(x, 'deg')); },
+            cos: function(x) { return math.cos(math.unit(x, 'deg')); },
+            tan: function(x) { return math.tan(math.unit(x, 'deg')); },
+            
+            // המשתנה n הוא הסדר של השורש (לבחירתך)
+            nthRoot: function(x, n) { 
+                if (n === undefined) n = 2; // ברירת מחדל לשורש ריבועי
+                if (x < 0 && n % 2 === 0) throw new Error("Complex");
+                // שימוש ב-Math.sign ו-Math.pow פותר לחלוטין את שגיאות התחביר
+                return Math.sign(x) * Math.pow(Math.abs(x), 1/n); 
+            },
+            
+            // לוגריתם לפי בסיס לבחירתך
+            log: function(x, base) {
+                if (base === undefined) return Math.log10(x);
+                return Math.log(x) / Math.log(base);
+            }
+        };
+
+        // חישוב הביטוי
+        let result = math.evaluate(evalExpression, scope);
+        
+        // בדיקת שגיאות מתמטיות נוספות
+        if (result === Infinity || result === -Infinity || math.isNaN(result)) {
+            throw new Error("Math Error");
+        }
+
+        lastValidResult = result;
+        subDisplay.innerText = evalExpression + " =";
+        
+        let finalStr = formatResult(result, displayMode.value);
+        
+        display.value = finalStr;
+        currentExpression = finalStr;
+
+    } catch (error) {
+        console.error(error);
+        if (error.message.includes("Division by zero") || error.message === "Math Error" || error.message.includes("Complex")) {
+            display.value = "Math Error";
+        } else {
+            display.value = "Syntax Error";
+        }
+        currentExpression = "";
+        lastValidResult = null;
+    }
+}
+
+// פתרון משוואה ריבועית
+function solveQuadratic() {
+    const a = parseFloat(document.getElementById('quad-a').value);
+    const b = parseFloat(document.getElementById('quad-b').value);
+    const c = parseFloat(document.getElementById('quad-c').value);
+    const resultDiv = document.getElementById('quad-result');
+
+    if (isNaN(a) || isNaN(b) || isNaN(c)) {
+        resultDiv.innerText = "נא להזין מקדמים תקינים";
+        return;
+    }
+    
+    if (a === 0) {
+        resultDiv.innerText = "a לא יכול להיות 0 במשוואה ריבועית";
+        return;
+    }
+
+    const delta = Math.pow(b, 2) - (4 * a * c);
+
+    if (delta > 0) {
+        let x1 = (-b + Math.sqrt(delta)) / (2 * a);
+        let x2 = (-b - Math.sqrt(delta)) / (2 * a);
+        x1 = math.round(x1, 5);
+        x2 = math.round(x2, 5);
+        resultDiv.innerText = `x₁ = ${x1} , x₂ = ${x2}`;
+    } else if (delta === 0) {
+        let x = -b / (2 * a);
+        x = math.round(x, 5);
+        resultDiv.innerText = `x = ${x}`;
+    } else {
+        resultDiv.innerText = "אין פתרון ממשי (Math Error)";
+    }
+}
