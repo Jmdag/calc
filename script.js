@@ -32,19 +32,16 @@ function deleteLast() {
 function formatResult(value, mode) {
     if (value === undefined || value === null) return "";
     
-    // טיפול בתוצאות מרוכבות
     if (math.typeOf(value) === 'Complex') {
         return value.toString();
     }
 
     let decimalValue = math.number(value);
     
-    // מצב עשרוני
     if (mode === 'decimal') {
         return math.round(decimalValue, 10).toString();
     } 
     
-    // מצב שבר רגיל
     if (mode === 'fraction') {
         try {
             return math.format(math.fraction(decimalValue), { fraction: 'ratio' });
@@ -53,7 +50,6 @@ function formatResult(value, mode) {
         }
     } 
     
-    // מצב שבר מעורב
     if (mode === 'mixed') {
         try {
             let frac = math.fraction(decimalValue);
@@ -87,7 +83,6 @@ function calculateResult() {
     try {
         let evalExpression = currentExpression;
         
-        // סגירה אוטומטית של סוגריים למניעת Syntax Error
         let openP = (evalExpression.match(/\(/g) || []).length;
         let closeP = (evalExpression.match(/\)/g) || []).length;
         while (openP > closeP) {
@@ -95,37 +90,27 @@ function calculateResult() {
             closeP++;
         }
 
-        // בדיקת חלוקה באפס 
         if (evalExpression.includes('/0') || evalExpression.includes('/ 0')) {
             throw new Error("Division by zero");
         }
 
-        // התיקון: חזרנו לאובייקט ה-scope היציב.
-        // הלוגיקה של השורש נכתבה מחדש ב-JS טהור כדי למנוע התנגשויות מול math.js
         const scope = {
             sin: function(x) { return math.sin(math.unit(x, 'deg')); },
             cos: function(x) { return math.cos(math.unit(x, 'deg')); },
             tan: function(x) { return math.tan(math.unit(x, 'deg')); },
-            
-            // המשתנה n הוא הסדר של השורש (לבחירתך)
             nthRoot: function(x, n) { 
-                if (n === undefined) n = 2; // ברירת מחדל לשורש ריבועי
+                if (n === undefined) n = 2;
                 if (x < 0 && n % 2 === 0) throw new Error("Complex");
-                // שימוש ב-Math.sign ו-Math.pow פותר לחלוטין את שגיאות התחביר
                 return Math.sign(x) * Math.pow(Math.abs(x), 1/n); 
             },
-            
-            // לוגריתם לפי בסיס לבחירתך
             log: function(x, base) {
                 if (base === undefined) return Math.log10(x);
                 return Math.log(x) / Math.log(base);
             }
         };
 
-        // חישוב הביטוי
         let result = math.evaluate(evalExpression, scope);
         
-        // בדיקת שגיאות מתמטיות נוספות
         if (result === Infinity || result === -Infinity || math.isNaN(result)) {
             throw new Error("Math Error");
         }
@@ -150,7 +135,6 @@ function calculateResult() {
     }
 }
 
-// פתרון משוואה ריבועית
 function solveQuadratic() {
     const a = parseFloat(document.getElementById('quad-a').value);
     const b = parseFloat(document.getElementById('quad-b').value);
